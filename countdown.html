@@ -1,0 +1,1565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#05070b" />
+<title>Chronos — Countdown to the Moment</title>
+<meta name="description" content="A cinematic, real-time countdown to the moment you choose." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2305070b'/%3E%3Ccircle cx='32' cy='32' r='16' fill='none' stroke='%23e3c39a' stroke-width='2'/%3E%3Cpath d='M32 22v11l7 5' fill='none' stroke='%23e3c39a' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@200;300;400;500&family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --ink: #05070b;
+  --fg: #f2efe9;
+  --fg-70: rgba(242, 239, 233, 0.7);
+  --fg-55: rgba(242, 239, 233, 0.55);
+  --fg-38: rgba(242, 239, 233, 0.38);
+  --accent: #e3c39a;
+  --accent-bright: #f0d6b2;
+  --line: rgba(242, 239, 233, 0.1);
+  --line-strong: rgba(242, 239, 233, 0.2);
+  --digit: clamp(60.8px, 11.59vw, 193.8px);
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --serif: "Bodoni Moda", "Times New Roman", serif;
+  --sans: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --px: 0;
+  --py: 0;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100svh;
+  background: var(--ink);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-weight: 300;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(227, 195, 154, 0.28);
+  color: var(--fg);
+}
+
+:focus-visible {
+  outline: 2px solid rgba(227, 195, 154, 0.8);
+  outline-offset: 3px;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 0%, #0a1219 0%, #060a10 45%, #04060a 100%);
+}
+
+.bg-video {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  opacity: 1;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+.veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(76% 58% at 50% 47%, rgba(5, 7, 11, 0.3) 0%, rgba(5, 7, 11, 0.12) 56%, transparent 80%),
+    linear-gradient(180deg, rgba(5, 7, 11, 0.6) 0%, rgba(5, 7, 11, 0.3) 24%, rgba(5, 7, 11, 0.12) 50%, rgba(5, 7, 11, 0.34) 78%, rgba(5, 7, 11, 0.72) 100%);
+}
+
+.glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  will-change: transform;
+  opacity: 0.62;
+}
+
+.glow-a {
+  width: 46vw;
+  height: 46vw;
+  min-width: 420px;
+  min-height: 420px;
+  left: -10vw;
+  top: -14vw;
+  background: radial-gradient(circle at 50% 50%, rgba(52, 116, 138, 0.3), rgba(30, 64, 84, 0.1) 45%, transparent 68%);
+  transform: translate3d(calc(var(--px) * -16px), calc(var(--py) * -12px), 0);
+  transition: transform 1.2s var(--ease);
+}
+
+.glow-b {
+  width: 40vw;
+  height: 40vw;
+  min-width: 360px;
+  min-height: 360px;
+  right: -8vw;
+  bottom: -10vw;
+  background: radial-gradient(circle at 50% 50%, rgba(190, 140, 78, 0.16), rgba(120, 84, 44, 0.06) 45%, transparent 70%);
+  transform: translate3d(calc(var(--px) * 12px), calc(var(--py) * 10px), 0);
+  transition: transform 1.4s var(--ease);
+}
+
+.glow-c {
+  width: 34vw;
+  height: 34vw;
+  min-width: 300px;
+  min-height: 300px;
+  left: 50%;
+  top: 34%;
+  background: radial-gradient(circle at 50% 50%, rgba(36, 76, 102, 0.2), transparent 66%);
+  transform: translate3d(calc(var(--px) * 8px), calc(var(--py) * 6px), 0);
+  transition: transform 1.6s var(--ease);
+}
+
+.backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(90% 70% at 50% 45%, transparent 0%, rgba(3, 5, 8, 0.35) 68%, rgba(2, 4, 7, 0.82) 100%);
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.7'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+#dust {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.page {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: clamp(20px, 3vw, 36px) clamp(20px, 4vw, 52px);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(8, 12, 18, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-70);
+}
+
+.status .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fg-38);
+  flex: 0 0 auto;
+}
+
+.status[data-state="live"] .dot {
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(227, 195, 154, 0.8);
+  animation: status-pulse 2.6s ease-in-out infinite;
+}
+
+.status[data-state="arrived"] .dot {
+  background: #fff3df;
+  box-shadow: 0 0 14px rgba(255, 235, 200, 0.9);
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.86); }
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sound {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(8, 12, 18, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.sound:hover,
+.sound:focus-within {
+  border-color: rgba(227, 195, 154, 0.32);
+  background: rgba(10, 15, 22, 0.62);
+}
+
+.sound-btn {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg-70);
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+
+.sound-btn:hover {
+  color: var(--accent);
+}
+
+.sound-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sound[data-on="false"] .icon-on,
+.sound[data-on="true"] .icon-off {
+  display: none;
+}
+
+.sound[data-on="true"] .sound-btn {
+  color: var(--accent);
+}
+
+.sound-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: width 0.35s var(--ease), opacity 0.25s ease, margin-right 0.35s var(--ease);
+}
+
+.sound[data-on="true"] .sound-range,
+.sound:hover .sound-range,
+.sound:focus-within .sound-range {
+  width: 62px;
+  margin-right: 13px;
+  opacity: 1;
+}
+
+.sound-range::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(242, 239, 233, 0.24);
+}
+
+.sound-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  margin-top: -4px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 9px rgba(227, 195, 154, 0.65);
+}
+
+.sound-range::-moz-range-track {
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(242, 239, 233, 0.24);
+}
+
+.sound-range::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 9px rgba(227, 195, 154, 0.65);
+}
+
+.sound-range:focus-visible {
+  outline-offset: 2px;
+}
+
+.stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vh, 48px) clamp(20px, 4vw, 52px);
+}
+
+.hero {
+  width: 100%;
+  max-width: 1440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.title-row {
+  position: relative;
+  width: 100%;
+  max-width: 1020px;
+  padding: 0 clamp(34px, 5vw, 64px);
+  margin-bottom: clamp(24px, 4vh, 52px);
+}
+
+.event-title {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.18em;
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: clamp(24px, 3vw, 44px);
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+
+.event-title-text {
+  max-width: 100%;
+  color: #fffdf7;
+  -webkit-text-fill-color: #fffdf7;
+  -webkit-text-stroke: 0;
+  text-shadow:
+    0 0 2px rgba(255, 62, 173, 0.9),
+    0 0 10px rgba(255, 62, 173, 0.45),
+    0 4px 0 rgba(6, 4, 10, 0.55),
+    0 10px 24px rgba(0, 0, 0, 0.55),
+    0 0 26px rgba(92, 168, 255, 0.18);
+  outline: 1px dashed transparent;
+  outline-offset: 10px;
+  border-radius: 4px;
+  cursor: text;
+  caret-color: var(--accent);
+  overflow-wrap: break-word;
+  word-break: break-word;
+  transition: outline-color 0.3s ease;
+}
+
+.event-title-text:hover {
+  outline-color: rgba(242, 239, 233, 0.16);
+}
+
+.event-title-text:focus {
+  outline-color: rgba(227, 195, 154, 0.5);
+}
+
+.event-title-text:empty::before {
+  content: attr(data-placeholder);
+  color: var(--fg-38);
+  -webkit-text-fill-color: var(--fg-38);
+  -webkit-text-stroke: 0;
+  text-shadow: none;
+}
+
+.title-logo {
+  display: block;
+  flex: 0 0 auto;
+  height: clamp(30px, 1.42em, 60px);
+  width: auto;
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 26px rgba(227, 195, 154, 0.14));
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.edit-title {
+  position: absolute;
+  right: clamp(0px, 1vw, 10px);
+  top: calc(clamp(24px, 3vw, 44px) * 0.7 - 16px);
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--fg-38);
+  cursor: pointer;
+  transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease, transform 0.25s var(--ease);
+}
+
+.edit-title:hover {
+  color: var(--accent);
+  border-color: rgba(227, 195, 154, 0.25);
+  background: rgba(227, 195, 154, 0.07);
+  transform: translateY(-1px);
+}
+
+.timer-zone {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bloom {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: min(1150px, 120vw);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 50% 50%, rgba(227, 195, 154, 0.12), rgba(227, 195, 154, 0.04) 38%, transparent 64%);
+  filter: blur(30px);
+  pointer-events: none;
+}
+
+.countdown {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: clamp(6px, 1.3vw, 26px);
+  filter: drop-shadow(0 0 30px rgba(227, 195, 154, 0.14)) drop-shadow(0 0 90px rgba(227, 195, 154, 0.06));
+  transition: opacity 0.4s ease, transform 0.55s var(--ease), filter 0.45s ease;
+}
+
+.unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(10px, 1.6vh, 20px);
+}
+
+.digits {
+  display: flex;
+  height: 1em;
+  font-size: var(--digit);
+  line-height: 1;
+  font-weight: 200;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.slot {
+  position: relative;
+  display: inline-block;
+  width: 0.64em;
+  height: 1em;
+  overflow: hidden;
+  text-align: center;
+}
+
+.digit {
+  display: block;
+  width: 100%;
+  height: 1em;
+  line-height: 1;
+  background: linear-gradient(180deg, #fffdf9 0%, #f3ead9 52%, #d8bd97 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+@supports (-webkit-text-stroke: 1px #000) {
+  .digit {
+    background: none;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke: clamp(1.1px, 0.014em, 2.8px) rgba(242, 239, 233, 0.94);
+  }
+}
+
+.digit.out {
+  position: absolute;
+  inset: 0;
+  animation: digit-out 0.22s var(--ease) forwards;
+}
+
+.digit.in {
+  animation: digit-in 0.32s var(--ease);
+}
+
+@keyframes digit-in {
+  from { transform: translateY(62%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes digit-out {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-62%); opacity: 0; }
+}
+
+.unit-label {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-55);
+  padding-left: 0.1em;
+}
+
+.sep {
+  display: flex;
+  align-items: center;
+  height: var(--digit);
+  font-size: calc(var(--digit) * 0.24);
+  font-weight: 200;
+  line-height: 1;
+  color: rgba(227, 195, 154, 0.42);
+  transform: translateY(-0.04em);
+  user-select: none;
+}
+
+.arrived {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 18px;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(16px);
+  pointer-events: none;
+  transition: opacity 0.5s ease 0.12s, transform 0.55s var(--ease) 0.12s, visibility 0s linear 0.65s;
+}
+
+.is-complete .countdown {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.985);
+  filter: blur(10px);
+}
+
+.is-complete .arrived {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.5s ease 0.12s, transform 0.55s var(--ease) 0.12s, visibility 0s;
+}
+
+.arrived-kicker {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(227, 195, 154, 0.78);
+}
+
+.arrived h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(28px, 3.8vw, 56px);
+  line-height: 1.24;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--fg);
+  text-shadow: 0 0 40px rgba(227, 195, 154, 0.25);
+}
+
+.arrived-sub {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-55);
+}
+
+.timer-zone.celebrate .bloom {
+  animation: bloom-pulse 1.9s var(--ease);
+}
+
+@keyframes bloom-pulse {
+  0% { transform: translate(-50%, -50%) scale(0.92); opacity: 0.7; }
+  35% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.target-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: clamp(24px, 4vh, 44px);
+}
+
+.target-key {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-55);
+}
+
+.target-value {
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: var(--fg-70);
+  font-variant-numeric: tabular-nums;
+}
+
+
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 0 clamp(20px, 4vw, 52px) clamp(18px, 3vw, 30px);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-55);
+}
+
+.footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: rise 0.65s var(--ease) forwards;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes rise {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 780px) {
+  :root {
+    --digit: clamp(49.4px, 13.3vw, 98.8px);
+  }
+
+  .countdown {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 36px;
+  }
+
+  .sep {
+    display: none;
+  }
+
+  .unit {
+    gap: 8px;
+  }
+
+  .digits {
+    font-weight: 300;
+  }
+
+  .unit-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  .title-row {
+    padding: 0 30px;
+    margin-bottom: 24px;
+  }
+
+  .edit-title {
+    width: 28px;
+    height: 28px;
+  }
+
+  .topbar {
+    padding: 18px 20px;
+  }
+
+  .footer {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .status {
+    padding: 7px 11px;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+  }
+}
+
+@media (max-height: 840px) and (min-width: 781px) {
+  :root {
+    --digit: clamp(53.2px, 9.12vw, 142.5px);
+  }
+
+  .title-row {
+    margin-bottom: 26px;
+  }
+}
+
+@media (max-width: 430px) {
+  .sound[data-on="true"] .sound-range {
+    width: 0;
+    margin-right: 0;
+    opacity: 0;
+  }
+
+  .sound:focus-within .sound-range,
+  .sound:hover .sound-range {
+    width: 48px;
+    margin-right: 10px;
+    opacity: 1;
+  }
+
+  .topbar-right {
+    gap: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  #dust {
+    display: none;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="backdrop" aria-hidden="true">
+  <video class="bg-video" id="bgVideo" autoplay loop playsinline preload="auto"
+    disablepictureinpicture tabindex="-1">
+    <source src="gettoa_final_bigcomp.mp4" type="video/mp4" />
+  </video>
+  <div class="glow glow-a"></div>
+  <div class="glow glow-b"></div>
+  <div class="glow glow-c"></div>
+  <div class="veil"></div>
+  <div class="grain"></div>
+</div>
+<canvas id="dust" aria-hidden="true"></canvas>
+
+<div class="page">
+  <header class="topbar reveal" style="--d:0ms">
+    <div class="topbar-right">
+      <div class="sound" id="sound" data-on="false">
+        <button class="sound-btn" id="soundBtn" type="button" aria-label="Unmute background audio" aria-pressed="false" title="Unmute background audio">
+          <svg class="icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+            <path d="m16 9.5 5 5M21 9.5l-5 5" />
+          </svg>
+          <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+            <path d="M15.4 8.6a4.8 4.8 0 0 1 0 6.8" />
+            <path d="M18.4 6a9 9 0 0 1 0 12" />
+          </svg>
+        </button>
+        <input class="sound-range" id="soundRange" type="range" min="0" max="100" step="1" value="10" aria-label="Background audio volume" />
+      </div>
+      <div class="status" id="status" data-state="live">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="statusLabel">Live</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="hero" aria-labelledby="titleHeading">
+      <div class="title-row reveal" style="--d:90ms">
+        <h1 class="event-title" id="titleHeading">
+          <span class="event-title-text" id="eventTitle" contenteditable="true" role="textbox" aria-multiline="false" aria-label="Event title" spellcheck="false" data-placeholder="Kubo 24 before">KUBO 24 BEFORE</span>
+          <img class="title-logo" src="gta-vi.png" alt="GTA VI" draggable="false" />
+        </h1>
+        <button class="edit-title" id="editTitle" type="button" aria-label="Edit event title" title="Rename event">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3Z" />
+            <path d="M14.5 6.5 17.5 9.5" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="timer-zone reveal" id="timerZone" style="--d:170ms">
+        <div class="bloom" aria-hidden="true"></div>
+        <div class="countdown" id="countdown" role="group" aria-label="Time remaining">
+          <div class="unit">
+            <div class="digits" data-unit="days">
+              <span class="slot"><span class="digit">0</span></span><span class="slot"><span class="digit">0</span></span>
+            </div>
+            <span class="unit-label">Days</span>
+          </div>
+          <span class="sep" aria-hidden="true">:</span>
+          <div class="unit">
+            <div class="digits" data-unit="hours">
+              <span class="slot"><span class="digit">0</span></span><span class="slot"><span class="digit">0</span></span>
+            </div>
+            <span class="unit-label">Hours</span>
+          </div>
+          <span class="sep" aria-hidden="true">:</span>
+          <div class="unit">
+            <div class="digits" data-unit="minutes">
+              <span class="slot"><span class="digit">0</span></span><span class="slot"><span class="digit">0</span></span>
+            </div>
+            <span class="unit-label">Minutes</span>
+          </div>
+          <span class="sep" aria-hidden="true">:</span>
+          <div class="unit">
+            <div class="digits" data-unit="seconds">
+              <span class="slot"><span class="digit">0</span></span><span class="slot"><span class="digit">0</span></span>
+            </div>
+            <span class="unit-label">Seconds</span>
+          </div>
+        </div>
+
+        <div class="arrived" id="arrived" aria-hidden="true">
+          <span class="arrived-kicker">Target reached</span>
+          <h2>The moment has arrived</h2>
+          <p class="arrived-sub" id="arrivedSub"></p>
+        </div>
+      </div>
+
+      <div class="target-line reveal" style="--d:240ms">
+        <span class="target-key">Target</span>
+        <span class="target-value" id="targetReadout">October 31, 2026 · 12:00 AM</span>
+      </div>
+
+      <p class="sr-only" id="summary" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <footer class="footer reveal" style="--d:420ms">
+    <span id="tzNote">Local time</span>
+    <span>Synced to your device clock</span>
+  </footer>
+</div>
+
+<noscript>
+  <p style="position:fixed;inset:auto 0 24px;text-align:center;color:#e0a48b;font-family:sans-serif;font-size:14px;">
+    This countdown needs JavaScript to run. Please enable it and reload.
+  </p>
+</noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  var STORE_KEY = 'chronos.countdown.v2';
+  var DEFAULT_TITLE = 'KUBO 24 BEFORE';
+  var LEGACY_TITLE = 'THE COUNTDOWN BEGINS';
+  var EVENT_TARGET = new Date(2026, 9, 31, 0, 0, 0, 0).getTime();
+  var REDIRECT_URL = 'location.html';
+  var redirectStarted = false;
+
+  var eventTitle = document.getElementById('eventTitle');
+  var editTitleBtn = document.getElementById('editTitle');
+  var readout = document.getElementById('targetReadout');
+  var statusChip = document.getElementById('status');
+  var statusLabel = document.getElementById('statusLabel');
+  var zone = document.getElementById('timerZone');
+  var countdown = document.getElementById('countdown');
+  var arrivedEl = document.getElementById('arrived');
+  var arrivedSub = document.getElementById('arrivedSub');
+  var summaryEl = document.getElementById('summary');
+  var tzNote = document.getElementById('tzNote');
+  var bgVideo = document.getElementById('bgVideo');
+  var sound = document.getElementById('sound');
+  var soundBtn = document.getElementById('soundBtn');
+  var soundRange = document.getElementById('soundRange');
+
+  var unitEls = {
+    days: document.querySelector('[data-unit="days"]'),
+    hours: document.querySelector('[data-unit="hours"]'),
+    minutes: document.querySelector('[data-unit="minutes"]'),
+    seconds: document.querySelector('[data-unit="seconds"]')
+  };
+
+  var state = { target: null, running: false, arrived: false };
+  var tickTimer = null;
+  var saveTimer = null;
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var DEFAULT_VOLUME = 0.10;
+  var audioOn = false;
+  var audioFade = null;
+
+  var dateFmt = new Intl.DateTimeFormat(undefined, {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'short'
+  });
+
+  function pad(value) {
+    return String(value).padStart(2, '0');
+  }
+
+  function formatTarget(ts) {
+    return dateFmt.format(new Date(ts));
+  }
+
+  function describeRemaining(ts) {
+    var total = Math.max(0, Math.ceil((ts - Date.now()) / 1000));
+    var d = Math.floor(total / 86400);
+    var h = Math.floor((total % 86400) / 3600);
+    var m = Math.floor((total % 3600) / 60);
+    var s = total % 60;
+    var parts = [];
+    if (d) parts.push(d + (d === 1 ? ' day' : ' days'));
+    if (h) parts.push(h + (h === 1 ? ' hour' : ' hours'));
+    if (!d && m) parts.push(m + (m === 1 ? ' minute' : ' minutes'));
+    if (!d && !h) parts.push(s + (s === 1 ? ' second' : ' seconds'));
+    return parts.join(', ');
+  }
+
+  function makeSlot() {
+    var slot = document.createElement('span');
+    slot.className = 'slot';
+    var digit = document.createElement('span');
+    digit.className = 'digit';
+    digit.textContent = '0';
+    slot.appendChild(digit);
+    return slot;
+  }
+
+  function setDigit(slot, next) {
+    var current = slot.querySelector('.digit:not(.out)');
+    if (!current) {
+      slot.appendChild(makeSlot().firstChild);
+      current = slot.querySelector('.digit:not(.out)');
+    }
+    if (current.textContent === next) return;
+    if (reduceMotion) {
+      current.textContent = next;
+      return;
+    }
+    var stale = slot.querySelectorAll('.digit.out');
+    for (var i = 0; i < stale.length; i++) stale[i].remove();
+    current.classList.add('out');
+    var incoming = document.createElement('span');
+    incoming.className = 'digit in';
+    incoming.textContent = next;
+    slot.appendChild(incoming);
+    incoming.addEventListener('animationend', function () {
+      incoming.classList.remove('in');
+    }, { once: true });
+    current.addEventListener('animationend', function () {
+      current.remove();
+    }, { once: true });
+  }
+
+  function renderUnit(el, value) {
+    var text = String(value);
+    if (el.dataset.value === text) return;
+    while (el.children.length < text.length) el.appendChild(makeSlot());
+    while (el.children.length > text.length) el.removeChild(el.lastElementChild);
+    for (var i = 0; i < text.length; i++) setDigit(el.children[i], text[i]);
+    el.dataset.value = text;
+  }
+
+  function paint(ts) {
+    var diff = ts - Date.now();
+    var total = diff > 0 ? Math.ceil(diff / 1000) : 0;
+    var days = Math.floor(total / 86400);
+    var hours = Math.floor((total % 86400) / 3600);
+    var minutes = Math.floor((total % 3600) / 60);
+    var seconds = total % 60;
+    renderUnit(unitEls.days, String(days).padStart(2, '0'));
+    renderUnit(unitEls.hours, pad(hours));
+    renderUnit(unitEls.minutes, pad(minutes));
+    renderUnit(unitEls.seconds, pad(seconds));
+    return total;
+  }
+
+  function zeroDisplay() {
+    renderUnit(unitEls.days, '00');
+    renderUnit(unitEls.hours, '00');
+    renderUnit(unitEls.minutes, '00');
+    renderUnit(unitEls.seconds, '00');
+  }
+
+  function setStatus(mode) {
+    statusChip.dataset.state = mode;
+    statusLabel.textContent = mode === 'live' ? 'Live' : mode === 'arrived' ? 'Arrived' : 'Standby';
+  }
+
+  function titleText() {
+    return eventTitle.textContent.replace(/\s+/g, ' ').trim();
+  }
+
+  function setTitle(value) {
+    eventTitle.textContent = String(value || '').replace(/\s*GTA\s*VI\s*$/i, '').trim();
+  }
+
+  function persist() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        title: titleText(),
+        target: state.target,
+        running: state.running,
+        arrived: state.arrived
+      }));
+    } catch (err) {}
+  }
+
+  function queuePersist() {
+    window.clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(persist, 220);
+  }
+
+  function readStore() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function scheduleNextTick() {
+    if (!state.running) return;
+    var now = Date.now();
+    var delay = 1000 - (now % 1000) + 15;
+    tickTimer = window.setTimeout(onTick, delay);
+  }
+
+  function onTick() {
+    if (!state.running || !state.target) return;
+    window.clearTimeout(tickTimer);
+    tickTimer = null;
+    var remaining = paint(state.target);
+    if (remaining <= 0) {
+      arrive(true);
+      return;
+    }
+    scheduleNextTick();
+  }
+
+  function start(ts) {
+    window.clearTimeout(tickTimer);
+    tickTimer = null;
+    state.target = ts;
+    state.running = true;
+    state.arrived = false;
+    zone.classList.remove('is-complete', 'celebrate');
+    arrivedEl.setAttribute('aria-hidden', 'true');
+    countdown.setAttribute('aria-hidden', 'false');
+    setStatus('live');
+    readout.textContent = formatTarget(ts);
+    var remaining = paint(ts);
+    if (remaining <= 0) {
+      arrive(false);
+      return;
+    }
+    scheduleNextTick();
+    summaryEl.textContent = 'Countdown running. ' + describeRemaining(ts) + ' remaining.';
+    persist();
+  }
+
+  function goToDestination() {
+    if (redirectStarted) return;
+    redirectStarted = true;
+    window.location.replace(REDIRECT_URL);
+  }
+
+  function arrive(celebrate) {
+    window.clearTimeout(tickTimer);
+    tickTimer = null;
+    state.running = false;
+    state.arrived = true;
+    zeroDisplay();
+    zone.classList.add('is-complete');
+    arrivedEl.setAttribute('aria-hidden', 'false');
+    countdown.setAttribute('aria-hidden', 'true');
+    setStatus('arrived');
+    arrivedSub.textContent = state.target ? formatTarget(state.target) : 'Your target moment';
+    summaryEl.textContent = 'The moment has arrived.';
+    if (celebrate && !reduceMotion) {
+      burst();
+      zone.classList.add('celebrate');
+      window.setTimeout(function () {
+        zone.classList.remove('celebrate');
+      }, 1900);
+    }
+    persist();
+    goToDestination();
+  }
+
+  function caretToEnd(el) {
+    var range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    var sel = window.getSelection();
+    if (!sel) return;
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  eventTitle.addEventListener('input', function () {
+    var text = eventTitle.textContent;
+    if (text.length > 64) {
+      eventTitle.textContent = text.slice(0, 64);
+      caretToEnd(eventTitle);
+    }
+    if (titleText() === '') eventTitle.innerHTML = '';
+    queuePersist();
+  });
+
+  eventTitle.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === 'Escape') {
+      e.preventDefault();
+      eventTitle.blur();
+    }
+  });
+
+  eventTitle.addEventListener('paste', function (e) {
+    e.preventDefault();
+    var clip = e.clipboardData || window.clipboardData;
+    if (!clip) return;
+    var text = clip.getData('text').replace(/\s+/g, ' ').slice(0, 64);
+    try {
+      document.execCommand('insertText', false, text);
+    } catch (err) {
+      eventTitle.textContent = (eventTitle.textContent + text).slice(0, 64);
+      caretToEnd(eventTitle);
+    }
+  });
+
+  eventTitle.addEventListener('blur', function () {
+    if (titleText() === '') eventTitle.innerHTML = '';
+    persist();
+  });
+
+  editTitleBtn.addEventListener('click', function () {
+    eventTitle.focus();
+    var range = document.createRange();
+    range.selectNodeContents(eventTitle);
+    var sel = window.getSelection();
+    if (!sel) return;
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) return;
+    if (state.running && state.target) {
+      window.clearTimeout(tickTimer);
+      onTick();
+    }
+  });
+
+  var canvas = document.getElementById('dust');
+  var ctx = canvas ? canvas.getContext('2d') : null;
+  var W = 0;
+  var H = 0;
+  var dpr = 1;
+  var particles = [];
+  var sparks = [];
+  var lastFrame = 0;
+  var resizeTimer = null;
+
+  function seedParticles() {
+    var count = Math.max(20, Math.min(60, Math.round(W / 28)));
+    particles = [];
+    for (var i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: 0.6 + Math.random() * 1.3,
+        vx: (Math.random() - 0.5) * 0.12,
+        vy: -(0.05 + Math.random() * 0.18),
+        a: 0.05 + Math.random() * 0.16,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.3 + Math.random() * 0.9
+      });
+    }
+  }
+
+  function sizeCanvas() {
+    if (!canvas || !ctx) return;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    seedParticles();
+  }
+
+  function burst() {
+    if (!ctx) return;
+    var rect = zone.getBoundingClientRect();
+    var cx = W / 2;
+    var cy = rect.top + rect.height * 0.45;
+    for (var i = 0; i < 120; i++) {
+      var angle = Math.random() * Math.PI * 2;
+      var speed = 1.2 + Math.random() * 6.5;
+      sparks.push({
+        x: cx,
+        y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 1.4,
+        r: 0.9 + Math.random() * 2.1,
+        life: 1,
+        decay: 0.007 + Math.random() * 0.011,
+        warm: Math.random() < 0.75
+      });
+    }
+  }
+
+  function frame(now) {
+    window.requestAnimationFrame(frame);
+    if (!ctx) return;
+    var dt = Math.min(2.5, Math.max(0.4, (now - lastFrame) / 16.667));
+    lastFrame = now;
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.phase += 0.012 * p.speed * dt;
+      if (p.y < -12) {
+        p.y = H + 12;
+        p.x = Math.random() * W;
+      }
+      if (p.x < -12) {
+        p.x = W + 12;
+      } else if (p.x > W + 12) {
+        p.x = -12;
+      }
+      var alpha = p.a * (0.55 + 0.45 * Math.sin(p.phase));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(232, 222, 203, ' + alpha.toFixed(3) + ')';
+      ctx.fill();
+    }
+
+    for (var j = sparks.length - 1; j >= 0; j--) {
+      var s = sparks[j];
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      s.vy += 0.055 * dt;
+      s.vx *= 0.994;
+      s.vy *= 0.994;
+      s.life -= s.decay * dt;
+      if (s.life <= 0) {
+        sparks.splice(j, 1);
+        continue;
+      }
+      var sparkAlpha = Math.max(0, s.life) * 0.85;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r * (0.35 + 0.65 * s.life), 0, Math.PI * 2);
+      ctx.fillStyle = s.warm
+        ? 'rgba(236, 206, 163, ' + sparkAlpha.toFixed(3) + ')'
+        : 'rgba(255, 250, 240, ' + sparkAlpha.toFixed(3) + ')';
+      ctx.fill();
+    }
+
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  if (canvas && ctx && !reduceMotion) {
+    sizeCanvas();
+    lastFrame = window.performance.now();
+    window.requestAnimationFrame(frame);
+    window.addEventListener('resize', function () {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(sizeCanvas, 160);
+    }, { passive: true });
+  }
+
+  if (!reduceMotion && window.matchMedia('(pointer: fine)').matches) {
+    var pointerRaf = null;
+    var pointerX = 0;
+    var pointerY = 0;
+    window.addEventListener('pointermove', function (e) {
+      pointerX = (e.clientX / window.innerWidth - 0.5) * 2;
+      pointerY = (e.clientY / window.innerHeight - 0.5) * 2;
+      if (pointerRaf !== null) return;
+      pointerRaf = window.requestAnimationFrame(function () {
+        pointerRaf = null;
+        document.documentElement.style.setProperty('--px', pointerX.toFixed(3));
+        document.documentElement.style.setProperty('--py', pointerY.toFixed(3));
+      });
+    }, { passive: true });
+  }
+
+  function clampVolume(value) {
+    return Math.min(1, Math.max(0, value));
+  }
+
+  function ensurePlaying() {
+    if (!bgVideo) return;
+    var attempt = bgVideo.play();
+    if (attempt && typeof attempt.catch === 'function') {
+      attempt.catch(function () {});
+    }
+  }
+
+  function setSoundUI(on) {
+    audioOn = on;
+    sound.setAttribute('data-on', on ? 'true' : 'false');
+    soundBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    var label = on ? 'Mute background audio' : 'Unmute background audio';
+    soundBtn.setAttribute('aria-label', label);
+    soundBtn.title = label;
+  }
+
+  function fadeVolume(target, duration, done) {
+    if (!bgVideo) return;
+    if (audioFade !== null) {
+      window.clearInterval(audioFade);
+      audioFade = null;
+    }
+    target = clampVolume(target);
+    if (duration <= 0) {
+      bgVideo.volume = target;
+      if (done) done();
+      return;
+    }
+    var start = bgVideo.volume;
+    var delta = target - start;
+    var t0 = window.performance.now();
+    audioFade = window.setInterval(function () {
+      var p = Math.min(1, (window.performance.now() - t0) / duration);
+      var eased = 1 - Math.pow(1 - p, 3);
+      bgVideo.volume = clampVolume(start + delta * eased);
+      if (p < 1) return;
+      window.clearInterval(audioFade);
+      audioFade = null;
+      if (done) done();
+    }, 40);
+  }
+
+  function enableSound(fromControl) {
+    if (!bgVideo) return;
+    var level = clampVolume(parseFloat(soundRange.value) / 100);
+    if (!(level > 0)) {
+      level = DEFAULT_VOLUME;
+      soundRange.value = '10';
+    }
+    bgVideo.muted = false;
+    setSoundUI(true);
+    ensurePlaying();
+    fadeVolume(level, fromControl ? 800 : 120);
+  }
+
+  function disableSound(instant) {
+    if (!bgVideo) return;
+    setSoundUI(false);
+    if (instant) {
+      fadeVolume(0, 0);
+      bgVideo.muted = true;
+      return;
+    }
+    fadeVolume(0, 600, function () {
+      bgVideo.muted = true;
+    });
+  }
+
+  function disarmAudio() {
+    window.removeEventListener('pointerdown', armAudio);
+    window.removeEventListener('keydown', armAudio);
+    window.removeEventListener('touchstart', armAudio);
+  }
+
+  function armAudio(e) {
+    if (e && e.target && sound && sound.contains(e.target)) return;
+    disarmAudio();
+    if (!audioOn) enableSound(false);
+  }
+
+  if (bgVideo) {
+    bgVideo.loop = true;
+    bgVideo.volume = DEFAULT_VOLUME;
+
+    var startVideo = function () {
+      ensurePlaying();
+    };
+
+    var startWithSound = function () {
+      bgVideo.muted = false;
+      bgVideo.volume = DEFAULT_VOLUME;
+      audioOn = true;
+      setSoundUI(true);
+      var attempt = bgVideo.play();
+      if (attempt && typeof attempt.catch === 'function') {
+        attempt.catch(function () {
+          if (!bgVideo.paused) return;
+          bgVideo.muted = true;
+          bgVideo.volume = DEFAULT_VOLUME;
+          audioOn = false;
+          setSoundUI(false);
+          ensurePlaying();
+        });
+      }
+    };
+
+    bgVideo.addEventListener('loadeddata', startVideo);
+    bgVideo.addEventListener('canplay', startVideo);
+    bgVideo.addEventListener('loadedmetadata', startVideo);
+    bgVideo.addEventListener('ended', function () {
+      bgVideo.currentTime = 0;
+      ensurePlaying();
+    });
+
+    startWithSound();
+
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden && bgVideo.paused) startVideo();
+    });
+
+    soundBtn.addEventListener('click', function () {
+      disarmAudio();
+      if (audioOn) {
+        disableSound(false);
+      } else {
+        enableSound(true);
+      }
+    });
+
+    soundRange.addEventListener('input', function () {
+      disarmAudio();
+      var level = clampVolume(parseFloat(this.value) / 100);
+      if (level <= 0) {
+        if (audioOn) disableSound(true);
+        return;
+      }
+      bgVideo.muted = false;
+      if (!audioOn) setSoundUI(true);
+      ensurePlaying();
+      fadeVolume(level, 120);
+    });
+
+    window.addEventListener('pointerdown', armAudio, { passive: true });
+    window.addEventListener('keydown', armAudio);
+    window.addEventListener('touchstart', armAudio, { passive: true });
+  }
+
+  function boot() {
+    var tz = '';
+    try {
+      tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    } catch (err) {}
+    tzNote.textContent = tz ? 'Local time · ' + tz.replace(/_/g, ' ') : 'Local time';
+
+    var saved = readStore();
+
+    if (saved && typeof saved.title === 'string') {
+      setTitle(saved.title.trim().toUpperCase() === LEGACY_TITLE ? DEFAULT_TITLE : saved.title);
+    } else {
+      setTitle(DEFAULT_TITLE);
+    }
+    start(EVENT_TARGET);
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
